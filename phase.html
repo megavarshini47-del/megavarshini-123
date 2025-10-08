@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Email Reminder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .reminder {
+            background: #e0f7fa;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .reminder.overdue {
+            background: #ffccbc;
+        }
+
+        .reminder button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            float: right;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Email Reminder</h1>
+    <form id="reminderForm">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="text" id="subject" placeholder="Subject" required>
+        <input type="date" id="date" required>
+        <input type="time" id="time" required>
+        <button type="submit">Add Reminder</button>
+    </form>
+
+    <h3>Reminders</h3>
+    <div id="reminderList"></div>
+</div>
+
+<script>
+    const form = document.getElementById('reminderForm');
+    const reminderList = document.getElementById('reminderList');
+    let reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+
+    function saveReminders() {
+        localStorage.setItem('reminders', JSON.stringify(reminders));
+    }
+
+    function renderReminders() {
+        reminderList.innerHTML = '';
+        const now = new Date();
+
+        if (reminders.length === 0) {
+            reminderList.innerHTML = '<p>No reminders yet.</p>';
+            return;
+        }
+
+        reminders.forEach(reminder => {
+            const reminderTime = new Date(reminder.dateTime);
+            const div = document.createElement('div');
+            div.className = 'reminder';
+            if (reminderTime < now) {
+                div.classList.add('overdue');
+            }
+
+            div.innerHTML = `
+                <strong>${reminder.subject}</strong><br>
+                To: ${reminder.email}<br>
+                At: ${reminderTime.toLocaleString()}
+                <button onclick="deleteReminder(${reminder.id})">X</button>
+            `;
+
+            reminderList.appendChild(div);
+        });
+    }
+
+    function deleteReminder(id) {
+        reminders = reminders.filter(r => r.id !== id);
+        saveReminders();
+        renderReminders();
+    }
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const subject = document.getElementById('subject').value;
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+
+        const newReminder = {
+            id: Date.now(),
+            email,
+            subject,
+            dateTime: `${date}T${time}`
+        };
+
+        reminders.push(newReminder);
+        saveReminders();
+        renderReminders();
+        form.reset();
+    });
+
+    renderReminders();
+    setInterval(renderReminders, 10000); // refresh every 10 seconds
+</script>
+
+</body>
+</html>
